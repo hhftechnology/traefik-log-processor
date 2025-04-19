@@ -1,0 +1,18 @@
+services:
+  traefik:
+    image: traefik:v3.3.4
+    volumes:
+      - log_volume:/logs
+    command:
+      - --log.filePath=/logs/traefik.log
+      - --log.format=json
+
+  log_processor:
+    build: .
+    volumes:
+      - log_volume:/input_logs
+      - processed_logs:/logs
+    command: tail -F /input_logs/traefik.log | python /app/process_logs.py
+volumes:
+  log_volume:
+  processed_logs:
