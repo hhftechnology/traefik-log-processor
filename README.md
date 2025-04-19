@@ -58,7 +58,7 @@ To use this log processor with your existing Traefik setup:
    Run the following command in the directory containing your `docker-compose.yml` file:
 
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 The processed logs will be written to the `processed_logs` volume, organized by service name and date, e.g., `/logs/<service_name>/<YYYY-MM-DD>.log`.
