@@ -1,18 +1,24 @@
 services:
-  traefik:
-    image: traefik:v3.3.4
-    volumes:
-      - log_volume:/logs
-    command:
-      - --log.filePath=/logs/traefik.log
-      - --log.format=json
-
-  log_processor:
+  traefik-log-processor:
     build: .
+    container_name: traefik-log-processor
     volumes:
-      - log_volume:/input_logs
-      - processed_logs:/logs
-    command: tail -F /input_logs/traefik.log | python /app/process_logs.py
-volumes:
-  log_volume:
-  processed_logs:
+      # Mount Traefik logs directory
+      - /path/to/traefik/logs:/logs:ro
+
+      # Mount output directory for split logs
+      - /path/to/output:/output
+
+      # Mount custom configuration (optional)
+      - ./config.yaml:/app/config.yaml:ro
+
+    # For better container management
+    restart: unless-stopped
+
+    # Resource limits to keep it lightweight
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M

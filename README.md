@@ -1,106 +1,93 @@
-
 # Traefik Log Processor
 
-This Docker Compose setup uses the `hhftechnology/traefik-log-processor` image to process Traefik logs, splitting them into separate folders based on the "ServiceName" field and implementing log rotation and retention.
+A lightweight, resource-efficient tool that splits Traefik logs by service name while maintaining the original JSON format.
 
-## Introduction
+## Features
 
-The `hhftechnology/traefik-log-processor` image contains a Python script that reads Traefik's JSON-formatted logs from standard input, parses each log entry, and writes it to a file in a directory structure based on the "ServiceName" and the date. It also performs periodic cleanup to remove old log files based on the retention policy.
+- Splits Traefik JSON logs based on `ServiceName` field
+- Preserves original log format and structure
+- Supports multiple input methods (file, directory monitoring, stdin)
+- Configurable log rotation (size-based and time-based)
+- Configurable log retention policies (age-based and count-based)
+- Minimal resource footprint (written in Go)
+- Runs in a lightweight container
+- Simple configuration via YAML file
 
-## Prerequisites
+## Quick Start
 
-- Docker
-- Docker Compose
+```bash
+# Using Docker
+docker run -v /path/to/traefik/logs:/logs -v /path/to/output:/output \
+  -v /path/to/config.yaml:/app/config.yaml \
+  ghcr.io/hhftechnology/traefik-log-processor:latest
 
-## Usage
-
-To use this log processor with your existing Traefik setup:
-
-1. **Configure Traefik to write logs in JSON format to a file.** For example, in your Traefik configuration:
-
-   ```yaml
-   [log]
-     filePath = "/logs/traefik.log"
-     format = "json"
-   ```
-
-   And in your Traefik Docker Compose service:
-
-   ```yaml
-   services:
-     traefik:
-       image: traefik:v3.3.4
-       volumes:
-         - traefik_logs:/logs
-       # ... other configurations ...
-   ```
-
-2. **Create a Docker Compose file for the log processor:**
-
-   ```yaml
-   services:
-     log_processor:
-       image: hhftechnology/traefik-log-processor
-       volumes:
-         - traefik_logs:/input_logs
-         - processed_logs:/logs
-       command: tail -F /input_logs/traefik.log | python /app/process_logs.py
-   volumes:
-     traefik_logs:
-       external: true
-     processed_logs:
-   ```
-
-   This assumes that `traefik_logs` is the volume where Traefik writes its log file.
-
-3. **Start the log processor:**
-
-   Run the following command in the directory containing your `docker-compose.yml` file:
-
-   ```bash
-   docker compose up -d
-   ```
-
-The processed logs will be written to the `processed_logs` volume, organized by service name and date, e.g., `/logs/<service_name>/<YYYY-MM-DD>.log`.
-
-## Customization
-
-You can customize the log processing behavior using environment variables:
-
-- `LOG_DIR`: Directory where processed logs are written (default: `/logs`)
-- `RETENTION_DAYS`: Number of days to retain logs (default: 30)
-- `CLEANUP_INTERVAL_HOURS`: Interval in hours between cleanup operations (default: 1)
-
-For example, to change the retention period to 7 days, update your `docker-compose.yml`:
-
-```yaml
-services:
-  log_processor:
-    image: hhftechnology/traefik-log-processor
-    environment:
-      - RETENTION_DAYS=7
-    volumes:
-      - traefik_logs:/input_logs
-      - processed_logs:/logs
-    command: tail -F /input_logs/traefik.log | python /app/process_logs.py
+# Using Docker Compose
+docker compose up -d
 ```
 
-## Accessing Processed Logs
+## Configuration
 
-To access the processed logs from the host, you can mount the `processed_logs` volume to a host directory. For example:
+Create a `config.yaml` file:
 
 ```yaml
-volumes:
-  processed_logs:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /host/path/to/processed/logs
+input:
+  # Watch a single file
+  file: "/logs/traefik.log"
+  
+  # Or watch a directory for log files
+  # directory: "/logs"
+  # pattern: "*.log"
+  
+  # Or read from stdin
+  # stdin: true
+
+output:
+  # Base directory for service-specific logs
+  directory: "/output"
+  
+  # Format for service directories (supports templating)
+  format: "{{.ServiceName}}"
+
+rotation:
+  # Maximum size of each log file in MB
+  max_size: 100
+  
+  # Maximum age of each log file in days
+  max_age: 7
+  
+  # Maximum number of old log files to retain
+  max_backups: 5
+  
+  # Whether to compress old log files
+  compress: true
+
+# Optional field mapping (useful for CLF format or adding fields)
+field_mapping:
+  # You can rename fields or add new computed fields
+  # Example for adding a RouterName field:
+  # router_name: "{{extractRouterName .ServiceName}}"
 ```
 
-Then, the logs will be available at `/host/path/to/processed/logs/<service_name>/<YYYY-MM-DD>.log`.
+## How It Works
+
+1. The application watches Traefik log files or reads from stdin
+2. Each log line is parsed as JSON
+3. The `ServiceName` field is extracted (e.g., `5-service@http`)
+4. The log entry is written to a service-specific directory
+5. Log rotation and retention policies are applied to manage storage
+
+## Building from Source
+
+```bash
+git clone https://github.com/hhftechnology/traefik-log-processor.git
+cd traefik-log-processor
+go build -o traefik-log-processor cmd/main.go
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.

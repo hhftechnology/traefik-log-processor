@@ -1,0 +1,38 @@
+input:
+  # Choose one of the following input methods:
+  
+  # 1. Watch a single log file
+  file: "/logs/traefik.log"
+  
+  # 2. Watch a directory for log files
+  # directory: "/logs"
+  # pattern: "*.log"
+  
+  # 3. Read from stdin (useful for piping)
+  # stdin: true
+
+output:
+  # Base directory for service-specific logs
+  directory: "/output"
+  
+  # Format for service directories
+  format: "{{.ServiceName}}"
+
+rotation:
+  # Maximum size of each log file in MB
+  max_size: 100
+  
+  # Maximum age of each log file in days
+  max_age: 7
+  
+  # Maximum number of old log files to retain
+  max_backups: 5
+  
+  # Whether to compress old log files
+  compress: true
+
+# Optional field mapping (if you need to add or transform fields)
+field_mapping:
+  # You can add custom fields or transform existing ones
+  # Example: Add a cleaned service name without the @http suffix
+  # clean_service_name: "{{trimSuffix .ServiceName \"@http\"}}"
