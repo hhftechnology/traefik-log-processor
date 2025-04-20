@@ -57,10 +57,11 @@ func NewLogWriter(config *Config) *LogWriter {
 
 // WriteLog writes a log entry to the appropriate file based on ServiceName
 func (lw *LogWriter) WriteLog(logEntry TraefikLog, rawLog string) error {
-	// Extract ServiceName
+	// Extract ServiceName, use "unknown" if missing
 	serviceName, ok := logEntry["ServiceName"].(string)
 	if !ok {
-		return fmt.Errorf("missing or invalid ServiceName field")
+		// Use "unknown" as the service name for logs without ServiceName
+		serviceName = "unknown"
 	}
 
 	// Create directory if needed
