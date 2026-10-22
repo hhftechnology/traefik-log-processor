@@ -1,5 +1,7 @@
 # Traefik Log Processor
 
+[![Discuss on the HHF forum](https://img.shields.io/badge/discuss-forum.hhf.technology-AD1457?logo=discourse&logoColor=white)](https://forum.hhf.technology/c/traefik-plugins-tools/traefik-log-processor)
+
 A lightweight, resource-efficient tool that splits Traefik logs by service name while maintaining the original JSON format.
 
 ## Features
